@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>영화의 즐거움, MovieStar</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+</head>
+<body>
+    <section layout:fragment="content">
+        <div class="logo">
+            <div>
+                <div>
+                    <a href="list">
+                        <img src="/img/logo_w.png">
+                    </a>
+                </div>
+                <div>
+                    <span>함께 나누는 즐거움, 더해지는 즐거움!</span>
+                </div>
+            </div>
+        </div>
+
+        <article class="register_content">
+            <h1>영화 추가</h1>
+            <div>
+                <form th:action="@{/movie/register}" method="post" enctype="multipart/form-data">
+                    <div>
+                        <span>영화명</span>
+                        <input type="text" name="title"/>
+                    </div>
+                    <div>
+                        <span>줄거리</span>
+                        <textarea name="content"></textarea>
+                    </div>
+                    <div>
+                        <span>포스터</span>
+                        <input type="file" name="image"/>
+                    </div>
+
+                    <div class="buttons">
+                        <button type="submit">완료</button>
+                    </div>
+                </form>
+            </div>
+        </article>
+    </section>
+</body>
+</html>

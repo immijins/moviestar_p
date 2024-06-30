@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>영화의 즐거움, MovieStar</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+</head>
+<body>
+    <section layout:fragment="content">
+        <div class="logo">
+            <div>
+                <div>
+                    <a href="list">
+                        <img src="/img/logo_w.png">
+                    </a>
+                </div>
+                <div>
+                    <span>함께 나누는 즐거움, 더해지는 즐거움!</span>
+                </div>
+            </div>
+        </div>
+
+        <article class="search">
+            <form th:action="@{/movie/list}" method="get">
+                <div>
+                    <input type="hidden" name="size" th:value="${pageRequestDTO.size}"/>
+                    <div class="search_box">
+                        <!-- 검색 -->
+                        <div>
+                            <span>검색타입</span>
+                            <select name="type">
+                                <option value="">타입 선택</option>
+                                <option value="t" th:selected="${pageRequestDTO.type == 't'}">제목</option>
+                                <option value="c" th:selected="${pageRequestDTO.type == 'c'}">내용</option>
+                                <option value="tc" th:selected="${pageRequestDTO.type == 'tc'}">제목 내용</option>
+                            </select>
+                        </div>
+                        <div>
+                            <span>검색어</span>
+                            <input type="text" name="keyword" th:value="${pageRequestDTO.keyword}"/>
+                        </div>
+                        <div>
+                            <button type="submit">검색</button>
+                            <!--<button type="button">Clear</button>-->
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </article>
+
+        <article class="movie_list">
+            <p>Movie Chart</p>
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Title</th>
+                            <th>Img</th>
+                        </tr>
+                    </thead>
+                    <tbody th:with="link = ${pageRequestDTO.getLink()}">
+                        <tr th:each="dto : ${responseDTO.dtoList}">
+                            <th>[[${dto.no}]]</th>
+                            <td>
+                                <a th:href="|@{/movie/read(no = ${dto.no})}&${link}|">
+                                    <img th:src="@{/movie/images/{filename}(filename=${dto.imagePath})}" alt="Image"/>
+                                </a>
+                            </td>
+                            <td>
+                                <a th:href="|@{/movie/read(no = ${dto.no})}&${link}|">
+                                    <p>[[${dto.title}]]</p>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </article>
+
+        <!-- 페이징 -->
+        <div class="paging pagination">
+            <th:block th:each="i: ${#numbers.sequence(responseDTO.start, responseDTO.end)}">
+                <li th:class="${responseDTO.page == i} ? 'page-item active' : 'page-item'">
+                    <a class="page-link" th:data-num="${i}">[[${i}]]</a>
+                </li>
+            </th:block>
+        </div>
+
+        <div class="add">
+            <a th:href="|@{/movie/register}|">추가</a>
+        </div>
+    </section>
+
+    <script layout:fragment="script" th:inline="javascript">
+        document.querySelector(".pagination").addEventListener("click", function(e) {
+            e.preventDefault(); // a 태그일 경우 기본 이벤트 제거
+            e.stopPropagation();
+
+            const target = e.target;
+
+            if(target.tagName !== 'A') { // a 태그가 아니면 종료
+                return;
+            }
+
+            const num = target.getAttribute("data-num"); // 클릭한 a 태그의 data-num 속성(이동해야할 페이지번호)를 가져옴
+            const formObj = document.querySelector("form");
+            formObj.innerHTML += `<input type="hidden" name="page" value="${num}">`; // form 태그에 page 태그 추가
+            formObj.submit();
+        }, false)
+    </script>
+</body>
+</html>

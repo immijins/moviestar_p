@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>영화의 즐거움, MovieStar</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <!-- axios CDN 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<section layout:fragment="content">
+    <div class="logo">
+        <div>
+            <div>
+                <a href="list">
+                    <img src="/img/logo_w.png">
+                </a>
+            </div>
+            <div>
+                <span>함께 나누는 즐거움, 더해지는 즐거움!</span>
+            </div>
+        </div>
+    </div>
+
+    <article class="read_content">
+        <div>
+            <span>순번</span>
+            <input type="text" th:value="${dto.no}" readonly/>
+        </div>
+        <div>
+            <span>영화명</span>
+            <input type="text" th:value="${dto.title}" readonly/>
+        </div>
+        <div>
+            <span>줄거리</span>
+            <textarea readonly>[[${dto.content}]]</textarea>
+        </div>
+        <div>
+            <span>포스터</span>
+            <img th:src="@{/movie/images/{filename}(filename=${dto.imagePath})}" alt="Image"/>
+        </div>
+
+        <div class="buttons">
+            <button class="addReplyBtn">댓글 추가</button>
+
+            <div th:with="link = ${pageRequestDTO.getLink()}">
+                <a th:href="|@{/movie/list}?${link}|">
+                    <button type="button">목록</button>
+                </a>
+                <a th:href="|@{/movie/modify(no=${dto.no})}&${link}|">
+                    <button type="button">수정</button>
+                </a>
+            </div>
+        </div>
+    </article>
+
+    <!-- 댓글 생성 창 -->
+    <div id="registerModal">
+        <div class="modal-content">
+            <h3>댓글 추가</h3>
+            <div>
+                <div>
+                    <span>작성자</span>
+                    <input type="text" class="replyWriter"/>
+                </div>
+                <div>
+                    <span>Like</span>
+                    <input type="number" class="movieLike" min="1" max="5">
+                </div>
+                <div>
+                    <span>내용</span>
+                    <input type="text" class="replyText"/>
+                </div>
+            </div>
+            <div>
+                <button type="button" class="registerBtn">작성</button>
+                <button type="button" class="closeRegisterBtn">닫기</button>
+            </div>
+        </div>
+    </div>
+    <!-- 댓글 생성 창 end -->
+
+    <div class="reply_content">
+        <ul class="replyList"></ul>
+        <ul class="replyPaging"></ul>
+    </div>
+
+
+    <!-- 댓글 수정 창 -->
+    <div id="modifyModal" class="modal">
+        <div class="modal-content">
+            <span class="close">X</span>
+            <h3>댓글 수정</h3>
+            <div class="replyHeader"></div> <!-- Add this line -->
+            <div>
+                <span>내용</span>
+                <input type="text" class="modifyText"/>
+            </div>
+            <div>
+                <span>Like</span>
+                <input type="number" class="modifyLike" min="1" max="5">
+            </div>
+            <div>
+                <button type="button" class="modifyBtn">수정</button>
+                <button type="button" class="removeBtn">삭제</button>
+                <button type="button" class="closeModifyBtn">닫기</button>
+            </div>
+        </div>
+    </div>
+    <!-- 댓글 수정 창 end -->
+
+    <script src="/js/reply.js"></script>
+</section>
+</body>
+
+<script layout:fragment="script" th:inline="javascript">
+    const no = [[${dto.no}]];
+
+    function printReplies(page, size, goLast) {
+        getList({no, page, size, goLast}).then(
+            data => {
+                console.log("Fetched replies:", data);
+                printList(data.dtoList);
+                printPages(data);
+            }
+        ).catch(e => {
+            console.error("Error fetching replies:", e);
+        });
+    }
+    printReplies(1, 10, true);
+
+    const replyList = document.querySelector('.replyList');
+    const replyPaging = document.querySelector('.replyPaging');
+
+    function printList(dtoList) {
+        let str = '';
+        if (dtoList && dtoList.length > 0) {
+            for (const dto of dtoList) {
+                str += `<li class="replyItem">
+                            <p>
+                                ${dto.rno}
+                            </p>
+                            <p>
+                                <span>댓글 : </span>
+                                <span data-rno="${dto.rno}">${dto.replyText}</span>
+                            </p>
+                            <p>
+                                <span>작성자 : </span>
+                                <span>${dto.replyWriter}</span>
+                            </p>
+                            <p>
+                                <span>Like : </span>
+                                <span>${dto.movieLike}</span>
+                            </p>
+                            <p>
+                                <span>작성일 : </span>
+                                <span>${dto.regDate}</span>
+                            </p>
+                        </li>`;
+            }
+        }
+        replyList.innerHTML = str;
+    }
+
+    function printPages(data) {
+        page = data.page;
+        let pageStr = '';
+        if (data.prev) {
+            pageStr += `<li class="page-item"><a class="page-link" data-page="${data.start - 1}">PREV</a></li>`;
+        }
+        for (let i = data.start; i <= data.end; i++) {
+            pageStr += `<li class="page-item ${i === data.page ? "active" : ""}">
+                            <a class="page-link" data-page="${i}">${i}</a></li>`;
+        }
+        if (data.next) {
+            pageStr += `<li class="page-item"><a class="page-link" data-page="${data.end + 1}">NEXT</a></li>`;
+        }
+        replyPaging.innerHTML = pageStr;
+    }
+
+    const registerModal = document.getElementById('registerModal');
+    const registerBtn = document.querySelector('.registerBtn');
+    const replyText = document.querySelector('.replyText');
+    const replyWriter = document.querySelector('.replyWriter');
+    const movieLike = document.querySelector('.movieLike');
+    const closeRegisterBtn = document.querySelector('.closeRegisterBtn');
+    const closeModalSpan = document.querySelector('.close');
+
+    document.querySelector('.addReplyBtn').addEventListener('click', function(e) {
+        registerModal.style.display = "block";
+    });
+
+    closeRegisterBtn.addEventListener('click', function(e) {
+        registerModal.style.display = "none";
+    });
+
+    // closeModalSpan.addEventListener('click', function(e) {
+    //     registerModal.style.display = "none";
+    // });
+
+    window.addEventListener('click', function(event) {
+        if (event.target == registerModal) {
+            registerModal.style.display = "none";
+        }
+    });
+
+    registerBtn.addEventListener('click', function(e) {
+        const replyObj = {no:no, replyText:replyText.value, replyWriter:replyWriter.value, movieLike:movieLike.value};
+        addReply(replyObj).then(result => {
+            alert(result.data.rno);
+            registerModal.style.display = "none";
+            replyText.value = '';
+            replyWriter.value = '';
+            movieLike.value = 1;
+            printReplies(1, 10, true);
+        }).catch(e => {
+            alert('Exception');
+        });
+    });
+
+    let page = 1;
+    let size = 10;
+
+    replyPaging.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const target = e.target;
+        if (!target || target.tagName !== 'A') {
+            return;
+        }
+
+        page = target.getAttribute('data-page');
+        printReplies(page, size);
+    });
+
+    const modifyModal = document.getElementById('modifyModal');
+    const replyHeader = document.querySelector('.replyHeader');
+    const modifyText = document.querySelector('.modifyText');
+    const modifyLike = document.querySelector('.modifyLike');
+    const modifyBtn = document.querySelector('.modifyBtn');
+    const removeBtn = document.querySelector('.removeBtn');
+    const closeModifyBtn = document.querySelector('.closeModifyBtn');
+
+    replyList.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const target = e.target;
+        if (!target || target.tagName !== 'SPAN') {
+            return;
+        }
+
+        const rno = target.getAttribute('data-rno');
+        if (!rno) {
+            return;
+        }
+
+        getReply(rno).then(reply => {
+            console.log(reply);
+            replyHeader.innerHTML = reply.rno;
+            modifyText.value = reply.replyText;
+            modifyLike.value = reply.movieLike;
+            modifyModal.style.display = "block";
+        }).catch(e => alert('error'));
+    });
+
+    modifyBtn.addEventListener('click', function(e) {
+        console.log('modifyBtn...click');
+        const replyObj = {no:no, rno:replyHeader.innerHTML, replyText:modifyText.value, movieLike:modifyLike.value};
+        modifyReply(replyObj).then(result => {
+            alert(result.rno + ' 댓글이 수정되었습니다.');
+            modifyText.value = '';
+            modifyModal.style.display = "none";
+            printReplies(page, size);
+        }).catch(e => {
+            console.log(e);
+        });
+    });
+
+    closeModifyBtn.addEventListener('click', function(e) {
+        modifyModal.style.display = "none";
+    });
+
+    closeModalSpan.addEventListener('click', function (e) {
+        modifyModal.style.display = "none";
+    })
+
+    removeBtn.addEventListener('click', function(e) {
+        removeReply(replyHeader.innerHTML).then(result => {
+            alert(result.rno + ' 댓글이 삭제되었습니다.');
+            modifyText.value = '';
+            modifyModal.style.display = "none";
+            page = 1;
+            printReplies(page, size);
+        }).catch(e => {
+            console.log(e);
+        });
+    });
+</script>
+</html>
