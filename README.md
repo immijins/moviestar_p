@@ -10,7 +10,7 @@ Spring Boot를 활용한 게시판 CRUD로 제작한 영화 리뷰 사이트입�
 ## ⚙기술스택
 **Tool :** Illustrator, IntelliJ IDEA
 
-**Framework/Library :** Spring Boot, Thymeleaf
+**Framework/Library :** Spring Boot, Thymeleaf, JPA
 
 **DataBase :** MariraDB
 
